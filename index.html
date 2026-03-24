@@ -736,7 +736,7 @@
   // ===== COPY LINK =====
   function copyLink() {
     if (!currentOrderId) return;
-    const baseUrl = 'https://suprise.github.io/merze/customer.html';
+    const baseUrl = 'https://suprise-tau-wheat.vercel.app/';
     const url = `${baseUrl}?id=${currentOrderId}`;
     navigator.clipboard.writeText(url).then(() => showToast('✅ لینک کۆپی کرا!'));
   }
