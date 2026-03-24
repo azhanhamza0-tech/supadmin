@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مەرزە - پانێڵی ئەدمین</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA8egr87Ff-TMZYMBRNws9OBMhfCzgEwTo",
+    authDomain: "studenttable-133f5.firebaseapp.com",
+    projectId: "studenttable-133f5",
+    storageBucket: "studenttable-133f5.firebasestorage.app",
+    messagingSenderId: "227219517450",
+    appId: "1:227219517450:web:0eb070d5bcbf968f366ff3",
+    measurementId: "G-0E5B8PH63E"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.db = db;
+  window.firestoreModules = { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp };
+  window.firebaseReady = true;
+
+  loadOrders();
+</script>
+
+<!-- QR Code library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C97A;
+    --gold-pale: #F5E6C0;
+    --dark: #0D0A06;
+    --dark2: #1A1408;
+    --dark3: #251E10;
+    --brown: #3D2E0E;
+    --text: #F0E6D0;
+    --text-muted: #A89060;
+    --success: #5C8A4A;
+    --danger: #8A3A3A;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Tajawal', sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(201,168,76,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(201,168,76,0.05) 0%, transparent 50%);
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    background: linear-gradient(135deg, var(--dark2) 0%, var(--dark3) 100%);
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon {
+    width: 50px; height: 50px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.4);
+  }
+
+  .logo-text h1 {
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 2px;
+  }
+
+  .logo-text p {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+  }
+
+  .admin-badge {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: var(--dark);
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+
+  /* ===== MAIN LAYOUT ===== */
+  main {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 40px 30px;
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 30px;
+    align-items: start;
+  }
+
+  /* ===== CARD ===== */
+  .card {
+    background: linear-gradient(145deg, var(--dark2), var(--dark3));
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* ===== FORM ===== */
+  .form-group { margin-bottom: 20px; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  input, textarea, select {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'Tajawal', sans-serif;
+    font-size: 15px;
+    transition: all 0.3s;
+    outline: none;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.06);
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
+  }
+
+  textarea { resize: vertical; min-height: 100px; }
+
+  select option { background: var(--dark2); color: var(--text); }
+
+  /* Product Tags */
+  .product-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .product-tag {
+    background: rgba(201,168,76,0.15);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: var(--gold-light);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .product-tag .remove-tag {
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 16px;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+
+  .product-tag .remove-tag:hover { color: #e06060; }
+
+  .add-product-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .add-product-row input {
+    flex: 1;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .btn-add-small {
+    background: rgba(201,168,76,0.2);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-add-small:hover {
+    background: var(--gold);
+    color: var(--dark);
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: var(--dark);
+    border: none;
+    border-radius: 14px;
+    padding: 16px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+    margin-top: 8px;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(201,168,76,0.4);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ===== QR MODAL ===== */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: linear-gradient(145deg, var(--dark2), var(--dark3));
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 24px;
+    padding: 40px;
+    max-width: 480px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    animation: modalIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.8) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background: rgba(255,255,255,0.07);
+    border: none;
+    color: var(--text-muted);
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .modal-close:hover { background: rgba(255,255,255,0.15); color: var(--text); }
+
+  .modal h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 6px;
+    letter-spacing: 2px;
+  }
+
+  .modal .customer-name-display {
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--text);
+    margin: 10px 0 6px;
+  }
+
+  .modal .order-gift {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+  }
+
+  #qrcode-container {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    display: inline-block;
+    margin: 0 auto 24px;
+    box-shadow: 0 8px 40px rgba(201,168,76,0.3);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .btn-download {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: var(--dark);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .btn-download:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(201,168,76,0.4); }
+
+  .btn-share {
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.4);
+    color: var(--gold);
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .btn-share:hover { background: rgba(201,168,76,0.2); }
+
+  /* ===== ORDERS LIST ===== */
+  .orders-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+  }
+
+  .orders-header .card-title { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+
+  .orders-count {
+    background: rgba(201,168,76,0.15);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold);
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .order-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(201,168,76,0.12);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+
+  .order-item:hover {
+    border-color: rgba(201,168,76,0.4);
+    background: rgba(201,168,76,0.05);
+    transform: translateX(-4px);
+  }
+
+  .order-avatar {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--dark);
+    flex-shrink: 0;
+  }
+
+  .order-info { flex: 1; }
+
+  .order-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .order-products {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+
+  .order-date {
+    font-size: 11px;
+    color: rgba(168,144,96,0.6);
+  }
+
+  .order-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .btn-qr {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    border: none;
+    color: var(--dark);
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 10px rgba(201,168,76,0.3);
+  }
+
+  .btn-qr:hover { transform: scale(1.1); }
+
+  .btn-delete {
+    background: rgba(138,58,58,0.2);
+    border: 1px solid rgba(138,58,58,0.4);
+    color: #e06060;
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .btn-delete:hover { background: rgba(138,58,58,0.4); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state .icon { font-size: 50px; margin-bottom: 16px; opacity: 0.5; }
+  .empty-state p { font-size: 15px; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: linear-gradient(135deg, #3a5c2a, #4a7a38);
+    color: white;
+    padding: 14px 22px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Tajawal', sans-serif;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* Loading */
+  .loading { text-align: center; padding: 30px; color: var(--text-muted); font-size: 14px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--dark2); }
+  ::-webkit-scrollbar-thumb { background: var(--brown); border-radius: 3px; }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    header { padding: 16px 20px; }
+    main { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🌸</div>
+    <div class="logo-text">
+      <h1>MERZE</h1>
+      <p>عەتری زەیت • عطور فاخرة</p>
+    </div>
+  </div>
+  <div class="admin-badge">🔐 ئەدمین</div>
+</header>
+
+<main>
+
+  <!-- LEFT: Form -->
+  <div>
+    <div class="card">
+      <div class="card-title">✦ زیادکردنی مشتەریەکی نوێ</div>
+
+      <div class="form-group">
+        <label>👤 ناوی مشتەری</label>
+        <input type="text" id="customerName" placeholder="ناوی تەواو بنووسە...">
+      </div>
+
+      <div class="form-group">
+        <label>📦 بەرهەمەکان</label>
+        <div id="productTags" class="product-tags"></div>
+        <div class="add-product-row">
+          <input type="text" id="productInput" placeholder="ناوی بەرهەم..." onkeydown="if(event.key==='Enter')addProduct()">
+          <button class="btn-add-small" onclick="addProduct()">+</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>🎁 دیاری / تێبینی تایبەت</label>
+        <textarea id="giftNote" placeholder="پەیامی تایبەت بۆ مشتەری...&#10;بۆ نموونە: سوپاسی بۆ ئەوەی هەڵبژاردتمان 💛"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>📅 بەروار</label>
+        <input type="date" id="orderDate">
+      </div>
+
+      <button class="btn-primary" onclick="createOrder()">
+        🔗 دروستکردنی QR کۆد
+      </button>
+    </div>
+  </div>
+
+  <!-- RIGHT: Orders -->
+  <div>
+    <div class="card">
+      <div class="orders-header">
+        <div class="card-title" style="margin-bottom:0;border:none;padding:0">📋 لیستی مشتەریەکان</div>
+        <div class="orders-count" id="ordersCount">٠ مشتەری</div>
+      </div>
+
+      <div id="ordersList">
+        <div class="loading">⏳ چاوەڕوان بە...</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- QR Modal -->
+<div class="modal-overlay" id="qrModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div style="font-size:30px;margin-bottom:8px">🌸</div>
+    <h2>ELVARE</h2>
+    <div class="customer-name-display" id="modalCustomerName"></div>
+    <div class="order-gift" id="modalGift"></div>
+    <div id="qrcode-container"><div id="qrcode"></div></div>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">کۆد سکان بکە بۆ دیتنی داواکارییەکەت</p>
+    <div class="modal-actions">
+      <button class="btn-download" onclick="downloadQR()">⬇️ داونلۆد</button>
+      <button class="btn-share" onclick="copyLink()">🔗 کۆپی لینک</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  let products = [];
+  let orders = [];
+  let currentOrderId = null;
+  let currentOrderData = null;
+
+  // Set today's date
+  document.getElementById('orderDate').valueAsDate = new Date();
+
+  // ===== PRODUCT TAGS =====
+  function addProduct() {
+    const input = document.getElementById('productInput');
+    const val = input.value.trim();
+    if (!val) return;
+    if (!products.includes(val)) {
+      products.push(val);
+      renderProductTags();
+    }
+    input.value = '';
+    input.focus();
+  }
+
+  function removeProduct(idx) {
+    products.splice(idx, 1);
+    renderProductTags();
+  }
+
+  function renderProductTags() {
+    const container = document.getElementById('productTags');
+    container.innerHTML = products.map((p, i) =>
+      `<div class="product-tag">${p}<span class="remove-tag" onclick="removeProduct(${i})">×</span></div>`
+    ).join('');
+  }
+
+  // ===== CREATE ORDER =====
+  async function createOrder() {
+    const name = document.getElementById('customerName').value.trim();
+    const gift = document.getElementById('giftNote').value.trim();
+    const date = document.getElementById('orderDate').value;
+
+    if (!name) { showToast('⚠️ ناوی مشتەری بنووسە', 'warn'); return; }
+    if (products.length === 0) { showToast('⚠️ هەرچەند بەرهەمێک زیاد بکە', 'warn'); return; }
+
+    if (!window.firebaseReady) { showToast('⚠️ چاوەڕێی Firebase بکە', 'warn'); return; }
+
+    const { collection, addDoc, serverTimestamp } = window.firestoreModules;
+
+    try {
+      const docRef = await addDoc(collection(window.db, 'orders'), {
+        customerName: name,
+        products: products,
+        giftNote: gift,
+        orderDate: date,
+        createdAt: serverTimestamp()
+      });
+
+      showQR(docRef.id, { customerName: name, products, giftNote: gift, orderDate: date });
+      showToast('✅ مشتەری زیادکرا!');
+      resetForm();
+      loadOrders();
+    } catch (e) {
+      console.error(e);
+      showToast('❌ هەڵە ڕویدا، دوبارە هەوڵ بدە');
+    }
+  }
+
+  // ===== SHOW QR =====
+  function showQR(orderId, data) {
+    currentOrderId = orderId;
+    currentOrderData = data;
+
+    const baseUrl = 'https://suprise.github.io/merze/customer.html';
+    const url = `${baseUrl}?id=${orderId}`;
+
+    document.getElementById('modalCustomerName').textContent = data.customerName;
+    document.getElementById('modalGift').textContent = data.products.join(' • ');
+
+    const container = document.getElementById('qrcode');
+    container.innerHTML = '';
+    new QRCode(container, {
+      text: url,
+      width: 200,
+      height: 200,
+      colorDark: '#0D0A06',
+      colorLight: '#FFFFFF',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+
+    document.getElementById('qrModal').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('qrModal').classList.remove('active');
+  }
+
+  // ===== DOWNLOAD QR =====
+  function downloadQR() {
+    const canvas = document.querySelector('#qrcode canvas');
+    if (!canvas) { showToast('⚠️ کۆد دووبارە دروست بکە'); return; }
+    const a = document.createElement('a');
+    a.download = `${currentOrderData?.customerName || 'customer'}-QR.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    showToast('✅ داونلۆد کرا!');
+  }
+
+  // ===== COPY LINK =====
+  function copyLink() {
+    if (!currentOrderId) return;
+    const baseUrl = 'https://suprise.github.io/merze/customer.html';
+    const url = `${baseUrl}?id=${currentOrderId}`;
+    navigator.clipboard.writeText(url).then(() => showToast('✅ لینک کۆپی کرا!'));
+  }
+
+  // ===== LOAD ORDERS =====
+  async function loadOrders() {
+    if (!window.firebaseReady) {
+      setTimeout(loadOrders, 800);
+      return;
+    }
+
+    const { collection, getDocs } = window.firestoreModules;
+
+    try {
+      const snapshot = await getDocs(collection(window.db, 'orders'));
+      orders = [];
+      snapshot.forEach(doc => {
+        orders.push({ id: doc.id, ...doc.data() });
+      });
+
+      orders.sort((a, b) => {
+        const ta = a.createdAt?.seconds || 0;
+        const tb = b.createdAt?.seconds || 0;
+        return tb - ta;
+      });
+
+      renderOrders();
+    } catch (e) {
+      console.error(e);
+      document.getElementById('ordersList').innerHTML = '<div class="loading">❌ هەڵە ڕویدا</div>';
+    }
+  }
+
+  function renderOrders() {
+    const list = document.getElementById('ordersList');
+    const count = document.getElementById('ordersCount');
+    count.textContent = `${orders.length} مشتەری`;
+
+    if (orders.length === 0) {
+      list.innerHTML = `<div class="empty-state"><div class="icon">🌸</div><p>هێشتا هیچ مشتەریەک نییە</p></div>`;
+      return;
+    }
+
+    list.innerHTML = orders.map(o => {
+      const initial = o.customerName ? o.customerName.charAt(0) : '?';
+      const prods = (o.products || []).join('، ');
+      const date = o.orderDate || '';
+      return `
+        <div class="order-item" onclick="showQR('${o.id}', ${JSON.stringify(o).replace(/'/g, "\\'")})">
+          <div class="order-avatar">${initial}</div>
+          <div class="order-info">
+            <div class="order-name">${o.customerName}</div>
+            <div class="order-products">${prods}</div>
+            <div class="order-date">📅 ${date}</div>
+          </div>
+          <div class="order-actions">
+            <button class="btn-qr" onclick="event.stopPropagation(); showQR('${o.id}', ${JSON.stringify(o).replace(/'/g, "\\'")})">⊞</button>
+            <button class="btn-delete" onclick="event.stopPropagation(); deleteOrder('${o.id}')">🗑</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ===== DELETE =====
+  async function deleteOrder(id) {
+    if (!confirm('ئایا دڵنیایت لە سڕینەوەی ئەم مشتەریە؟')) return;
+    const { doc, deleteDoc } = window.firestoreModules;
+    try {
+      await deleteDoc(doc(window.db, 'orders', id));
+      showToast('🗑️ سڕایەوە');
+      loadOrders();
+    } catch (e) {
+      showToast('❌ هەڵە ڕویدا');
+    }
+  }
+
+  // ===== RESET FORM =====
+  function resetForm() {
+    document.getElementById('customerName').value = '';
+    document.getElementById('giftNote').value = '';
+    document.getElementById('orderDate').valueAsDate = new Date();
+    products = [];
+    renderProductTags();
+  }
+
+  // ===== TOAST =====
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = type === 'warn'
+      ? 'linear-gradient(135deg, #6b4a10, #8a6020)'
+      : 'linear-gradient(135deg, #3a5c2a, #4a7a38)';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // Close modal on overlay click
+  document.getElementById('qrModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+</script>
+</div>
+</body>
+</html>
